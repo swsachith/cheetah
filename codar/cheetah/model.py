@@ -554,6 +554,11 @@ class Run(object):
                 rc_name = "sosflow_analysis"
                 rc_exe_path = sos_analysis_path
                 sosd_args = [sosd_path] + sosd_args
+                sos_pubs = sum([rc.nprocs for rc in self.run_components
+                                if rc.sosflow])
+                self.__copy_sosflow_analysis_dir(sos_analysis_path,
+                                                 num_aggregators,
+                                                 sos_pubs)
 
             self.node_layout.add_node({rc_name: 1})
 
@@ -569,11 +574,6 @@ class Run(object):
             self.run_components.insert(i, rc)
 
             listener_node_offset += 1
-            sos_pubs = sum([rc.nprocs for rc in self.run_components
-                            if rc.sosflow])
-            self.__copy_sosflow_analysis_dir(sos_analysis_path,
-                                             num_aggregators,
-                                             sos_pubs)
 
         # add env vars to each run, including sosflow daemon
         # NOTE: not sure how many if any are required for sosd, but
