@@ -569,8 +569,9 @@ class Run(object):
             self.run_components.insert(i, rc)
 
             listener_node_offset += 1
-            self.__copy_sosflow_analysis_dir(sos_analysis_path, \
-                                             num_aggregators)
+            self.__copy_sosflow_analysis_dir(sos_analysis_path,
+                                             num_aggregators,
+                                             num_listeners)
 
         # add env vars to each run, including sosflow daemon
         # NOTE: not sure how many if any are required for sosd, but
@@ -628,8 +629,8 @@ class Run(object):
             listener_node_offset += code_nodes
 
 
-    def __copy_sosflow_analysis_dir(self, sosflow_analysis_exe_path, \
-                                    num_aggregators):
+    def __copy_sosflow_analysis_dir(self, sosflow_analysis_exe_path,
+                                    num_aggregators, num_listeners):
         """
         Copy the sosflow_analysis base directory to the run directory.
         This has been requested to perform some plotting.
@@ -652,6 +653,7 @@ class Run(object):
         json_data['sosd']['SOS_EVPATH_MEETUP'] = self.run_path
         json_data['outputdir'] = dst
         json_data['aggregators']['count'] = num_aggregators
+        json_data['aggregators']['expected_pubs'] = num_listeners
 
         with open(config_filename, "w") as f:
             json.dump(json_data, f, indent=4)
