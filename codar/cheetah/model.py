@@ -9,6 +9,7 @@ supercomputers (machines) are specified in other modules with the corresponding
 name.
 """
 import os
+import shutil
 import stat
 import json
 import math
@@ -568,6 +569,8 @@ class Run(object):
             self.run_components.insert(i, rc)
 
             listener_node_offset += 1
+            self.__copy_sosflow_analysis_dir(sos_analysis_path, \
+                                             num_aggregators)
 
         # add env vars to each run, including sosflow daemon
         # NOTE: not sure how many if any are required for sosd, but
@@ -623,6 +626,37 @@ class Run(object):
             # functionality needed in workflow, should eventual converge
             # so they are using the same model.
             listener_node_offset += code_nodes
+
+
+    def __copy_sosflow_analysis_dir(self, sosflow_analysis_exe_path, \
+                                    num_aggregators):
+        """
+        Copy the sosflow_analysis base directory to the run directory.
+        This has been requested to perform some plotting.
+        """
+
+        # Copy the analysis dir to the run dir
+        sosflow_analysis_base_path = \
+            os.path.dirname(os.path.realpath(sosflow_analysis_exe_path))
+        sos_anly_dirname = os.path.basename(sosflow_analysis_base_path)
+        dst = os.path.join(self.run_path, sos_anly_dirname)
+        shutil.copytree(sosflow_analysis_base_path, dst)
+        config_filename = dst + "/sos_config.json"
+
+        # Edit the analysis config json file to set analysis parameters
+        with open(config_filename) as f:
+            json_data = json.load(f)
+
+        # Assume the following dictionary keys exist
+        json_data['sosd']['SOS_WORK_DIR'] = self.run_path
+        json_data['sosd']['SOS_EVPATH_MEETUP'] = self.run_path
+        json_data['outputdir'] = dst
+        json_data['aggregators']['count'] = num_aggregators
+
+        with open(config_filename, "w") as f:
+            json.dump(json_data, f, indent=4)
+
+        quit()
 
 
 class RunComponent(object):
