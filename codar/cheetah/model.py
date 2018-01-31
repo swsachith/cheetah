@@ -567,7 +567,7 @@ class Run(object):
             rc.env['SOS_EVPATH_MEETUP'] = run_path
             rc.env['TAU_SOS'] = '1'
             self.run_components.insert(i, rc)
-            
+
             listener_node_offset += 1
             sos_pubs = sum([rc.nprocs for rc in self.run_components
                             if rc.sosflow])
@@ -659,8 +659,6 @@ class Run(object):
 
         with open(config_filename, "w") as f:
             json.dump(json_data, f, indent=4)
-
-        quit()
 
 
 class RunComponent(object):
