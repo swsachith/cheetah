@@ -569,9 +569,13 @@ class Run(object):
             self.run_components.insert(i, rc)
 
             listener_node_offset += 1
+            sos_client_nprocs = 0
+            for rc in self.run_components:
+                if rc.sosflow:
+                    sos_client_nprocs += rc.nprocs
             self.__copy_sosflow_analysis_dir(sos_analysis_path,
                                              num_aggregators,
-                                             num_listeners)
+                                             sos_client_nprocs)
 
         # add env vars to each run, including sosflow daemon
         # NOTE: not sure how many if any are required for sosd, but
