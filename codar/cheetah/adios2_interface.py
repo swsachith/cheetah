@@ -14,8 +14,16 @@ Questions for myself:
 - Is there a way to know if the input file is an adios2 or adios1 xml file?
 """
 
-# A list of engines in adios2 and their parameters
-_adios2_engines={}
+# A list of valid engines in adios2 and their parameters
+_engines={"BPFile":["Threads", "ProfileUnits", "InitialBufferSize",
+                    "MaxBufferSize","BufferGrowthFactor","FlushStepsCount"],
+          "SST":["MarshalMethod"]}
+
+# A list of valid transports and their parameters
+_transports={"File":["Library"], "WAN":["Library"]}
+
+# A list of valid variable operations and their parameters
+_var_operations={"zfp":["rate","Tolerance","Precision"]}
 
 
 def set_engine(xmlfile, io_obj, engine_type, parameters=None):
@@ -31,6 +39,8 @@ def set_engine(xmlfile, io_obj, engine_type, parameters=None):
 
     tree = ET.parse(xmlfile)
     io_node = _get_io_node(tree, io_obj)
+    _validate_engine(engine_type, parameters)
+
     node = ET.Element("engine")
     node.set('type', engine_type)
     _add_parameters(node, parameters)
@@ -54,6 +64,8 @@ def set_transport(xmlfile, io_obj, transport_type, parameters=None):
 
     tree = ET.parse(xmlfile)
     io_node = _get_io_node(tree, io_obj)
+    _validate_transport(transport_type, parameters
+                        )
     node = ET.Element("transport")
     node.set('type', transport_type)
     _add_parameters(node, parameters)
@@ -78,6 +90,8 @@ def set_var_operation(xmlfile, io_obj, var_name, operation, parameters=None):
 
     tree = ET.parse(xmlfile)
     io_node = _get_io_node(tree, io_obj)
+    _validate_var_operation(operation, parameters)
+
     oper_child = ET.Element("operation")
     oper_child.set('type', operation)
     _add_parameters(oper_child, parameters)
@@ -100,7 +114,6 @@ def set_var_operation(xmlfile, io_obj, var_name, operation, parameters=None):
 
 
 def _get_io_node(tree, io_obj):
-
     root = tree.getroot()
     for sub_element in root:
         if sub_element.attrib['name'] == io_obj:
@@ -125,8 +138,45 @@ def _replace_and_add_elem(parent, child, elem_tag):
     parent.append(child)
 
 
+def _validate_engine(engine, parameters=None):
+    engine_exists = _engines.get(engine, False)
+    if not engine_exists:
+        raise Exception("{0} is not a valid ADIOS2 engine".format(engine))
+
+    if not parameters: return
+    _validate_parameters(parameters, _engines[engine], engine)
+
+
+def _validate_transport(transport, parameters=None):
+    transport_exists = _transports.get(transport, False)
+    if not transport_exists:
+        raise Exception("{0} is not a valid ADIOS2 transport".format(
+            transport))
+
+    if not parameters: return
+    _validate_parameters(parameters, _transports[transport], transport)
+
+
+def _validate_var_operation(operation, parameters=None):
+    var_oper_exists = _var_operations.get(operation, False)
+    if not var_oper_exists:
+        raise Exception("{0} is not a valid ADIOS2 variable "
+                        "operation".format(operation))
+
+    if not parameters: return
+    _validate_parameters(parameters, _var_operations[operation], operation)
+
+
+def _validate_parameters(parameters, par_list, xml_elem):
+    for parameter in parameters.keys():
+        if parameter in par_list: break
+        raise Exception("Parameter {0} is not a valid parameter for "
+                        "{1}".format(parameter, xml_elem))
+
+
 if __name__=="__main__":
     set_engine("test.xml", "writer", "SST", {"conn":"flexp",
-                                            'kutta': 22})
-    set_transport("test.xml", "writer", "File2", {'Library':'MPI', 'ProfileUnits':'Seconds'})
+                                            'bufsize': 22})
+    set_transport("test.xml", "writer", "File2", {'Library':'MPI',
+                                                  'ProfileUnits':'Seconds'})
     set_var_operation("test.xml", "writer", "T", "zfp", {'rate':180})
