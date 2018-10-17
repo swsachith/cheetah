@@ -175,8 +175,7 @@ def _validate_parameters(parameters, par_list, xml_elem):
 
 
 if __name__=="__main__":
-    set_engine("test.xml", "writer", "SST", {"conn":"flexp",
-                                            'bufsize': 22})
-    set_transport("test.xml", "writer", "File2", {'Library':'MPI',
-                                                  'ProfileUnits':'Seconds'})
+    set_engine("test.xml", "writer", "SST", {"MarshalMethod":"FFS"})
+    set_transport("test.xml", "writer", "WAN", {'Library':'MPI', 
+                                                'ProfileUnits':'Seconds'})
     set_var_operation("test.xml", "writer", "T", "zfp", {'rate':180})
