@@ -2,28 +2,40 @@
 ADIOS2 Interface
 """
 
-# from lxml import etree as ET
 import xml.etree.ElementTree as ET
-# import xml.dom.minidom as minidom
 
 """
 @TODO:
-Implement exception handling
+set_engine/transport/operation_parameter functions
 
 Questions for myself:
 - Is there a way to know if the input file is an adios2 or adios1 xml file?
 """
 
 # A list of valid engines in adios2 and their parameters
-_engines={"BPFile":["Threads", "ProfileUnits", "InitialBufferSize",
-                    "MaxBufferSize","BufferGrowthFactor","FlushStepsCount"],
+_engines={"BPFile":["Threads",
+                    "ProfileUnits",
+                    "InitialBufferSize",
+                    "MaxBufferSize",
+                    "BufferGrowthFactor",
+                    "FlushStepsCount"],
           "SST":["MarshalMethod"]}
 
 # A list of valid transports and their parameters
 _transports={"File":["Library"], "WAN":["Library"]}
 
 # A list of valid variable operations and their parameters
-_var_operations={"zfp":["rate","Tolerance","Precision"]}
+_var_operations={"zfp":["rate", "Tolerance", "Precision"]}
+
+
+def get_adios_version(xml_file):
+    """
+    Get the ADIOS version of this xml file.
+
+    :param xml_file: Path to the adios xml file
+    :return: 1 (adios version 1) or 2 (adios version 2)
+    """
+    pass
 
 
 def set_engine(xmlfile, io_obj, engine_type, parameters=None):
@@ -176,6 +188,6 @@ def _validate_parameters(parameters, par_list, xml_elem):
 
 if __name__=="__main__":
     set_engine("test.xml", "writer", "SST", {"MarshalMethod":"FFS"})
-    set_transport("test.xml", "writer", "WAN", {'Library':'MPI', 
+    set_transport("test.xml", "writer", "WAN", {'Library':'MPI',
                                                 'ProfileUnits':'Seconds'})
     set_var_operation("test.xml", "writer", "T", "zfp", {'rate':180})
