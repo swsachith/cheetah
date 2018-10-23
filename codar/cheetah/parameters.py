@@ -367,6 +367,15 @@ class ParamADIOS2XML(Param):
           { engine_name: {parameters} },
           { var_name: {operation_name: {parameters}}}
         ]
+        Examples:
+        [ {"BPFile": {'Threads':1}},
+          {"BPFile": {"ProfileUnits": "Microseconds"}}
+        ]
+        [ { “T”: { “zfp”: {“rate”:18, “accuracy”: 0.01} } },
+          { “T”: { “zfp”: {“rate”:18, “accuracy”: 0.001} } },
+          { “T”: { “zfp”: {“rate”:18, “accuracy”: 0.0001} } },
+          { “T”: { “sz”:  {“rate”:18, “accuracy”: 0.01} } },
+        ]
         """
 
         self.rc = rc
