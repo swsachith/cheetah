@@ -378,6 +378,7 @@ class ParamADIOS2XML(Param):
         ]
         """
 
+        Param.__init__(self, rc, io_name, values)
         self.rc = rc
         self.io_name = io_name
         self.operation_name = operation_name
@@ -387,10 +388,12 @@ class ParamADIOS2XML(Param):
             raise CheetahException("{0} not a valid adios xml "
                                    "object".format(operation_name))
 
-        for val_dict in values:
-            assert (type(val_dict) == dict)
-            assert (len(val_dict) == 1)
-            vals = val_dict.values()
+        for key_dict in values:
+            assert (type(key_dict) == dict)
+            assert (len(key_dict) == 1)
+            vals_dict = key_dict.values()
+            assert len(vals_dict) == 1
+            vals = list(vals_dict)[0]
             assert (type(vals) == dict)
             if operation_name == 'var_operation':
                 assert(len(vals) == 1)

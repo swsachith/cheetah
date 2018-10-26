@@ -76,8 +76,7 @@ def set_transport(xmlfile, io_obj, transport_type, parameters=None):
 
     tree = ET.parse(xmlfile)
     io_node = _get_io_node(tree, io_obj)
-    _validate_transport(transport_type, parameters
-                        )
+    _validate_transport(transport_type, parameters)
     node = ET.Element("transport")
     node.set('type', transport_type)
     _add_parameters(node, parameters)
@@ -138,7 +137,7 @@ def _add_parameters(node, parameters):
     if parameters is None:
         return
 
-    for key, value in parameters.items():
+    for key, value in list(list(parameters)[0].items()):
         par_elem = ET.Element("parameter")
         par_elem.set(key, str(value))
         node.append(par_elem)
@@ -180,10 +179,12 @@ def _validate_var_operation(operation, parameters=None):
 
 
 def _validate_parameters(parameters, par_list, xml_elem):
-    for parameter in parameters.keys():
-        if parameter in par_list: break
-        raise Exception("Parameter {0} is not a valid parameter for "
-                        "{1}".format(parameter, xml_elem))
+    assert len(parameters) == 1
+    param_dict = list(parameters)[0]
+    for parameter in param_dict.keys():
+        if parameter not in par_list:
+            raise Exception("Parameter {0} is not a valid parameter for "
+                            "{1}".format(parameter, xml_elem))
 
 
 if __name__=="__main__":

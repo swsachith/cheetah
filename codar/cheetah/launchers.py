@@ -12,12 +12,13 @@ import subprocess
 import math
 
 from codar.cheetah import adios_params, config, templates, exc
-from codar.cheetah.parameters import ParamAdiosXML, ParamConfig, ParamKeyValue
+from codar.cheetah.parameters import ParamAdiosXML, ParamADIOS2XML, \
+    ParamConfig, ParamKeyValue
 from codar.cheetah.helpers import parse_timedelta_seconds
 from codar.cheetah.helpers import copy_to_dir, copytree_to_dir, dir_size
 from codar.cheetah.parameters import SymLink
 from codar.cheetah.adios2_interface import get_adios_version
-import codar.cheetah.adios2_interface as adios2
+from codar.cheetah import adios2_interface as adios2
 
 
 TAU_PROFILE_PATTERN = "codar.cheetah.tau-{code}"
@@ -130,7 +131,8 @@ class Launcher(object):
 
             # ADIOS XML param support
             adios_xml_params = \
-                run.instance.get_parameter_values_by_type(ParamAdiosXML)
+                run.instance.get_parameter_values_by_type(ParamAdiosXML) or \
+                run.instance.get_parameter_values_by_type(ParamADIOS2XML)
             for pv in adios_xml_params:
                 working_dir = working_dirs[pv.target]
 
@@ -168,14 +170,12 @@ class Launcher(object):
                 else:   # adios version == 2
                     operation_value = list(pv.value.keys())[0]
                     if pv.operation_name in ('engine', 'transport'):
-                        parameters = pv.values
+                        parameters = pv.value.values()
                         if pv.operation_name == 'engine':
                             adios2.set_engine(xml_filepath, pv.io_name,
-                                              pv.operation_name,
                                               operation_value, parameters)
                         else:
                             adios2.set_transport(xml_filepath, pv.io_name,
-                                                 pv.operation_name,
                                                  operation_value, parameters)
                     else:   # operation_name == 'var_operation'
                         var_name = list(pv.value.keys())[0]
@@ -304,8 +304,7 @@ class Launcher(object):
             # in the creation of the run dir.
             self._get_pre_submit_dir_size(run)
 
-        #@TODO
-        # File.close(f)
+        f.close()
 
         if nodes is None:
             nodes = min_nodes
