@@ -63,10 +63,15 @@ class Brusselator(Campaign):
             # p.ParamCmdLineOption ('plotting', 'input_stream', '-i', ['bru.bp']),
 
             # How to set options in a key-value configuration file. Input file can be a json file.
+            # File path can be relative to the path specified in '-a' or it can be absolute.
+            # File will be copied to the working_dir automatically by Cheetah.
             # p.ParamKeyValue   ('simulation', 'feed_rate', 'input.conf', 'key', ['value']),
 
             # Sweep over environment variables
             # p.ParamEnvVar     ('simulation', 'openmp_stuff', 'OMP_NUM_THREADS', [4,8]),
+
+            # Pass additional scheduler arguments.
+            # p.ParamSchedulerArgs ('simulation', [{'-f':'hosts.txt'}])
     ]
 
     # Create a sweep

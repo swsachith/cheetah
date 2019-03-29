@@ -23,7 +23,7 @@ class SweepGroup(object):
                  component_inputs=None, walltime=3600, max_procs=None,
                  per_run_timeout=None, sosflow_profiling=False,
                  sosflow_analysis=False, nodes=None, launch_mode=None,
-                 rc_dependency=None):
+                 rc_dependency=None, run_repetitions=0):
         self.name = name
         self.nodes = nodes
         self.component_subdirs=component_subdirs
@@ -40,6 +40,7 @@ class SweepGroup(object):
                 raise CheetahException("launch mode must be None/default/mpmd")
         self.launch_mode = launch_mode
         self.rc_dependency = rc_dependency
+        self.run_repetitions = run_repetitions
 
 
 class Sweep(object):
@@ -230,6 +231,12 @@ class Instance(object):
 
     def get_hostfile(self, target):
         pv = self.parameter_values[target].get('hostfile')
+        if pv:
+            return pv.value
+        return None
+
+    def get_sched_opts(self, target):
+        pv = self.parameter_values[target].get('sched_opts')
         if pv:
             return pv.value
         return None
@@ -457,6 +464,13 @@ class ParamEnvVar(Param):
     def __init__(self, target, name, option, values):
         Param.__init__(self, target, name, values)
         self.option = option
+
+
+class ParamSchedulerArgs(Param):
+    def __init__(self, target, values):
+        Param.__init__(self, target, "sched_opts", values)
+        assert ((type(values) == list) and (type(values[0]) == dict)), \
+            "ParamSchedulerArgs must be a list containing a single dict"
 
 
 class ParamRunner(Param):
