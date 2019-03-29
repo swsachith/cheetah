@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 export PATH=$PATH:/Users/swithana/programs/openmpi/bin
 
 OPEN_MPI_LIB=/Users/swithana/programs/openmpi/lib

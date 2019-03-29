@@ -7,9 +7,9 @@ import copy
 class GrayScott(Campaign):
     name = "gray_scott"
 
-    codes = [("simulation", dict(exe="gray-scott",
+    codes = [("simulation", dict(exe="build/gray-scott",
                                  adios_xml_file='adios2.xml')),
-             ("pdf_calc", dict(exe="pdf_calc", adios_xml_file='adios2.xml')),
+             ("pdf_calc", dict(exe="build/pdf_calc", adios_xml_file='adios2.xml')),
              ]
 
     # A list of machines that this campaign must be supported on
@@ -52,8 +52,10 @@ class GrayScott(Campaign):
         p.ParamCmdLineArg('pdf_calc', 'outfile', 2, ['pdf']),
     ]
 
-    sweep1 = p.Sweep(node_layout={'titan': [{'simulation': 16}, ]},
+    sweep1 = p.Sweep(node_layout={'local': [{'simulation': 2}, {'pdf_calc': 1}]},
+                     # simulation: 16 ppn, norm_calc: 4 ppn
                      parameters=sweep1_parameters)
+
     sweepGroup1 = p.SweepGroup("sg-1", walltime=1000, per_run_timeout=300,
                                component_inputs={"simulation": sim_input},
                                parameter_groups=[sweep1], launch_mode='default',
