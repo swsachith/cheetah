@@ -76,7 +76,7 @@ class Brusselator(Campaign):
 
     # Create a sweep
     # node_layout represents no. of processes per node
-    sweep1 = p.Sweep (node_layout = {'titan': [{'simulation':16}, {'norm_calc': 4}] },  # simulation: 16 ppn, norm_calc: 4 ppn
+    sweep1 = p.Sweep (node_layout = {'local': [{'simulation':1}, {'norm_calc': 1}] },  # simulation: 16 ppn, norm_calc: 4 ppn
                       parameters = sweep1_parameters)
 
     # Create a sweep group from the above sweep. You can place multiple sweeps in the group.
