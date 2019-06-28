@@ -1,13 +1,9 @@
 #include "zchecker.h"
 #include "ftk_3D_interface.h"
 
-void printUsage()
-{
-  std::cout<<"./zchecker <input>"<<std::endl;
-}
 
-void z_check_mgard(int stepAnalysis, std::vector<double>& u, const std::string &solution,
-		   const std::vector<std::size_t>& shape)
+double * z_check_mgard(int stepAnalysis, std::vector<double>& u, const std::string &solution,
+		       const std::vector<std::size_t>& shape)
 {
   std::string tstr = std::to_string(stepAnalysis);
   char varName[1024];
@@ -48,12 +44,13 @@ void z_check_mgard(int stepAnalysis, std::vector<double>& u, const std::string &
   freeDataProperty(dataProperty);
   freeCompareResult(compareResult);
   free(bytes);
-  free(decData);
+  //free(decData);
   free(tmp);
+  return decData;
 }
 
 // pass shape, tolerance
-void z_check_zfp(int stepAnalysis, std::vector<double>& u, const std::string &solution)
+double * z_check_zfp(int stepAnalysis, std::vector<double>& u, const std::string &solution)
 {
   std::string tstr = std::to_string(stepAnalysis);
   char varName[1024];
@@ -93,7 +90,8 @@ void z_check_zfp(int stepAnalysis, std::vector<double>& u, const std::string &so
   freeDataProperty(dataProperty);
   freeCompareResult(compareResult);
   free(buffer);
-  free(decData);
+  //free(decData);
+  return (double*)decData;
 }
 
 double* z_check_sz(int stepAnalysis, std::vector<double>& u,

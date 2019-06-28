@@ -65,6 +65,9 @@ class Brusselator(Campaign):
             p.ParamCmdLineArg    ('norm_calc', 'write_norms_only', 3, [1]),
             
             # ParamADIOS2XML can be used to setup a value in the ADIOS xml file for the application
+            # Set the transport to BPFile, as we want the codes to run serially. Set the rc_dependency
+            #   in the Sweep to denote dependency between the codes
+            # To couple codes for concurrent execution, use a transport method such as SST
             p.ParamADIOS2XML     ('simulation', 'SimulationOutput', 'engine', [ {"BPFile": {}} ]),
             p.ParamADIOS2XML     ('simulation', 'AnalysisOutput', 'engine', [ {"BPFile": {}} ]),
             # p.ParamADIOS2XML     ('simulation', 'SimulationOutput', 'engine', [ {"BPFile": {'Threads':1}},
@@ -87,6 +90,7 @@ class Brusselator(Campaign):
 
     # Create a sweep
     # node_layout represents no. of processes per node
+    # rc_dependency denotes dependency between run components. Here, norm_calc will run after simulation has finished
     sweep1 = p.Sweep (node_layout = {'titan': [{'simulation':16}, {'norm_calc': 4}] },  # simulation: 16 ppn, norm_calc: 4 ppn
                       parameters = sweep1_parameters, rc_dependency={'norm_calc':'simulation'})
 
@@ -99,6 +103,7 @@ class Brusselator(Campaign):
                                 launch_mode='default',  # or MPMD
                                 # optional:
                                 # nodes=10,
+                                # run_repetitions=2, # no. of times each experiment must be repeated (here, total runs = 3)
                                 # component_subdirs = True, <-- codes have their own separate workspace in the experiment directory
                                 # component_inputs = {'simulation': ['some_input_file'], 'norm_calc': [SymLink('some_large_file')] } <-- inputs required by codes
                                 # max_procs = 64 <-- max no. of procs to run concurrently. depends on 'nodes'
