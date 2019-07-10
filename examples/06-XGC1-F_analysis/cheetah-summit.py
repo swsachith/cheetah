@@ -8,7 +8,7 @@ from math import ceil
 
 class GrayScott(Campaign):
     # A name for the campaign
-    name = "gray_scott"
+    name = "XGC1-f_analysis"
 
     # Input base directory
     INPUT_BASE_DIR = "/gpfs/alpine/scratch/swithana/csc143/xgc-f/exp-xgc-ftt-demo/w-495270-N8-PPN7-OMP6-48-8-InSituMPI/xgc_base"
