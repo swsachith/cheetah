@@ -3,7 +3,7 @@ from codar.cheetah import parameters as p
 from codar.savanna.machines import SummitNode
 from codar.cheetah.parameters import SymLink
 import copy
-from math import ceil
+from math import floor
 
 
 class GrayScott(Campaign):
@@ -103,8 +103,8 @@ class GrayScott(Campaign):
     # Lets place 32 ranks of the simulation and 8 ranks of f_analysis on the same node
     shared_node = SummitNode()
     for i in range(18):
-        shared_node.cpu[i] = "simulation:{}".format(ceil(i / 6))
-        shared_node.cpu[i + 21] = "simulation:{}".format(ceil(i + 18) / 6)
+        shared_node.cpu[i] = "simulation:{}".format(floor(i / 6))
+        shared_node.cpu[i + 21] = "simulation:{}".format(floor(i + 18) / 6)
     for i in range(3):
         shared_node.cpu[i + 18] = "f_analysis:0"
         shared_node.cpu[i + 18 + 21] = "f_analysis:0"
