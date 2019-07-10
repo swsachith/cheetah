@@ -112,7 +112,7 @@ class GrayScott(Campaign):
     sweep2 = p.Sweep(parameters=sweep2_parameters, node_layout={'summit': shared_node_layout})
 
     # Create a SweepGroup and add the above Sweeps. Set batch job properties such as the no. of nodes, 
-    sweepGroup1 = p.SweepGroup("summit-1",  # A unique name for the SweepGroup
+    sweepGroup1 = p.SweepGroup("summit-xgc-f1-1",  # A unique name for the SweepGroup
                                walltime=60,  # Total runtime for the SweepGroup
                                per_run_timeout=60,  # Timeout for each experiment
                                parameter_groups=[sweep2],  # Sweeps to include in this group
