@@ -19,7 +19,7 @@ class GrayScott(Campaign):
     # The adios xml file is automatically copied to the campaign directory.
     # 'runner_override' may be used to launch the code on a login/service node as a serial code
     #   without a runner such as aprun/srun/jsrun etc.
-    codes = [("xgc", dict(exe="xgc-es", adios_xml_file='adios2cfg.xml')),
+    codes = [("simulation", dict(exe="xgc-es", adios_xml_file='adios2cfg.xml')),
              ("f_analysis", dict(exe="xgc-f0", adios_xml_file='adios2cfg.xml', runner_override=False)), ]
 
     # List of machines on which this code can be run
@@ -28,7 +28,7 @@ class GrayScott(Campaign):
     # Kill an experiment right away if any workflow components fail (just the experiment, not the whole group)
     kill_on_partial_failure = True
 
-    # Any setup that you may need to do in an experiment directory before the experiment is run
+    # Any setup that you may need to do in an exper
     run_dir_setup_script = None
 
     # A post-process script that is run for every experiment after the experiment completes
