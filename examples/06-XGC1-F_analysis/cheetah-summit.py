@@ -108,6 +108,8 @@ class GrayScott(Campaign):
     for i in range(3):
         shared_node.cpu[i + 18] = "f_analysis:0"
         shared_node.cpu[i + 18 + 21] = "f_analysis:0"
+    for i in range(6):
+        shared_node.gpu[i] = "simulation:{}".format(i)
     shared_node_layout = [shared_node]
 
     sweep2 = p.Sweep(parameters=sweep2_parameters, node_layout={'summit': shared_node_layout})
