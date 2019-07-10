@@ -51,12 +51,12 @@ class Brusselator(Campaign):
     # Use ParamCmdLineArg to setup a command line arg, ParamCmdLineOption to setup a command line option, and so on.
     sweep1_parameters = [
             # ParamRunner with 'nprocs' sets the number of MPI processes
-            p.ParamRunner        ('simulation', 'nprocs', [4,8]), # <-- how to sweep over values
+            p.ParamRunner        ('simulation', 'nprocs', [1]), # <-- how to sweep over values
             p.ParamCmdLineArg    ('simulation', 'output', 1, ['bru.bp']),
             p.ParamCmdLineArg    ('simulation', 'nx', 2, [32]),
             p.ParamCmdLineArg    ('simulation', 'ny', 3, [32]),
             p.ParamCmdLineArg    ('simulation', 'nz', 4, [32]),
-            p.ParamCmdLineArg    ('simulation', 'steps', 5, [10,20,50]),  # sweep over these values. creates cross-product of runs with 'nprocs' above
+            p.ParamCmdLineArg    ('simulation', 'steps', 5, [10]),  # sweep over these values. creates cross-product of runs with 'nprocs' above
             p.ParamCmdLineArg    ('simulation', 'plotgap', 6, [1]),
 
             p.ParamRunner        ('norm_calc', 'nprocs', [1]),
@@ -91,12 +91,12 @@ class Brusselator(Campaign):
     # Create a sweep
     # node_layout represents no. of processes per node
     # rc_dependency denotes dependency between run components. Here, norm_calc will run after simulation has finished
-    sweep1 = p.Sweep (node_layout = {'titan': [{'simulation':16}, {'norm_calc': 4}] },  # simulation: 16 ppn, norm_calc: 4 ppn
+    sweep1 = p.Sweep (node_layout = {'local': [{'simulation':1}, {'norm_calc': 1}] },  # simulation: 16 ppn, norm_calc: 4 ppn
                       parameters = sweep1_parameters, rc_dependency={'norm_calc':'simulation'})
 
     # Create a sweep group from the above sweep. You can place multiple sweeps in the group.
     # Each group is submitted as a separate job.
-    sweepGroup1 = p.SweepGroup ("sg-tmp",
+    sweepGroup1 = p.SweepGroup ("sg-exp-2",
                                 walltime=300,
                                 per_run_timeout=60,
                                 parameter_groups=[sweep1],
@@ -113,5 +113,5 @@ class Brusselator(Campaign):
     sweepGroup2.name = 'sg-2'
     
     # Sweep groups to be activated
-    sweeps = [sweepGroup1, sweepGroup2]
+    sweeps = [sweepGroup1]
 

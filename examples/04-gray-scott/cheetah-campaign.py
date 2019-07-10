@@ -26,6 +26,7 @@ class GrayScott(Campaign):
     run_dir_setup_script = None
 
     # A post-process script that is run for every experiment after the experiment completes
+    #run_post_process_script = "provenance_collector.sh"
     run_post_process_script = None
 
     # Directory permissions for the campaign sub-directories
@@ -40,7 +41,7 @@ class GrayScott(Campaign):
     # Setup the sweep parameters for a Sweep
     sweep1_parameters = [
             # ParamRunner 'nprocs' specifies the no. of ranks to be spawned 
-            p.ParamRunner       ('simulation', 'nprocs', [512]),
+            p.ParamRunner       ('simulation', 'nprocs', [1]),
 
             # Create a ParamCmdLineArg parameter to specify a command line argument to run the application
             p.ParamCmdLineArg   ('simulation', 'settings', 1, ["settings.json"]),
@@ -48,7 +49,7 @@ class GrayScott(Campaign):
             # Edit key-value pairs in the json file
             # Sweep over two values for the F key in the json file. Alongwith 4 values for the nprocs property for 
             #   the pdf_calc code, this Sweep will create 2*4 = 8 experiments.
-            p.ParamConfig       ('simulation', 'feed_rate_U', 'settings.json', 'F', [0.01,0.02]),
+            p.ParamConfig       ('simulation', 'feed_rate_U', 'settings.json', 'F', [0.01]),
             p.ParamConfig       ('simulation', 'kill_rate_V', 'settings.json', 'k', [0.048]),
 
             # Setup an environment variable
@@ -60,7 +61,7 @@ class GrayScott(Campaign):
 
             # Now setup options for the pdf_calc application.
             # Sweep over four values for the nprocs 
-            p.ParamRunner       ('pdf_calc', 'nprocs', [32,64,128,256]),
+            p.ParamRunner       ('pdf_calc', 'nprocs', [1]),
             p.ParamCmdLineArg   ('pdf_calc', 'infile', 1, ['gs.bp']),
             p.ParamCmdLineArg   ('pdf_calc', 'outfile', 2, ['pdf']),
     ]
@@ -73,18 +74,18 @@ class GrayScott(Campaign):
     #   4 processes of pdf_calc per node. On Theta, different executables reside on separate nodes as node-sharing 
     #   is not permitted on Theta.
     sweep2_parameters = copy.deepcopy(sweep1_parameters)
-    sweep2 = p.Sweep (node_layout = {'theta': [{'simulation':16}, {'pdf_calc':4} ] },
+    sweep2 = p.Sweep (node_layout = {'local': [{'simulation':1}, {'pdf_calc':1} ] },
                       parameters = sweep2_parameters)
 
     # Create a SweepGroup and add the above Sweeps. Set batch job properties such as the no. of nodes, 
-    sweepGroup1 = p.SweepGroup ("sg-1", # A unique name for the SweepGroup
+    sweepGroup1 = p.SweepGroup ("test-11", # A unique name for the SweepGroup
                                 walltime=3600,  # Total runtime for the SweepGroup
                                 per_run_timeout=600,    # Timeout for each experiment                                
-                                parameter_groups=[sweep1,sweep2],   # Sweeps to include in this group
+                                parameter_groups=[sweep2],   # Sweeps to include in this group
                                 launch_mode='default',  # Launch mode: default, or MPMD if supported
                                 nodes=128,  # No. of nodes for the batch job.
                                 # rc_dependency={'pdf_calc':'simulation',}, # Specify dependencies between workflow components
-                                run_repetitions=2,  # No. of times each experiment in the group must be repeated (Total no. of runs here will be 3)
+                                run_repetitions=1,  # No. of times each experiment in the group must be repeated (Total no. of runs here will be 3)
                                 )
     
     # Activate the SweepGroup
