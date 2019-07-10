@@ -11,7 +11,8 @@ class GrayScott(Campaign):
     name = "XGC1-f_analysis"
 
     # Input base directory
-    INPUT_BASE_DIR = "/gpfs/alpine/scratch/swithana/csc143/xgc-f/exp-xgc-ftt-demo/w-495270-N8-PPN7-OMP6-48-8-InSituMPI/xgc_base"
+    XGC_INPUT_BASE_DIR = "/gpfs/alpine/scratch/swithana/csc143/xgc-f/exp-xgc-ftt-demo/xgc_work_cheetah/*"
+    FTT_INPUT_BASE_DIR = "/gpfs/alpine/scratch/swithana/csc143/xgc-f/exp-xgc-ftt-demo/ftt_work_cheetah/*"
     XGC1_inputs = "/gpfs/alpine/scratch/swithana/csc143/xgc-f/exp-xgc-ftt-demo/setup2/XGC-1_inputs"
 
     # Define your workflow. Setup the applications that form the workflow.
@@ -19,8 +20,8 @@ class GrayScott(Campaign):
     # The adios xml file is automatically copied to the campaign directory.
     # 'runner_override' may be used to launch the code on a login/service node as a serial code
     #   without a runner such as aprun/srun/jsrun etc.
-    codes = [("simulation", dict(exe="xgc-es", adios_xml_file='adios2cfg.xml')),
-             ("f_analysis", dict(exe="xgc-f0", adios_xml_file='adios2cfg.xml', runner_override=False)), ]
+    codes = [("simulation", dict(exe="xgc-es")),
+             ("f_analysis", dict(exe="xgc-f0", runner_override=False)), ]
 
     # List of machines on which this code can be run
     supported_machines = ['local', 'titan', 'theta', 'summit']
@@ -120,8 +121,8 @@ class GrayScott(Campaign):
                                nodes=8,  # No. of nodes for the batch job.
                                component_subdirs=True,
                                # <-- codes have their own separate workspace in the experiment directory
-                               component_inputs={'simulation': [SymLink(INPUT_BASE_DIR), SymLink(XGC1_inputs)],
-                                                 'f_analysis': [SymLink(INPUT_BASE_DIR), SymLink(XGC1_inputs)]},
+                               component_inputs={'simulation': [SymLink(XGC_INPUT_BASE_DIR), SymLink(XGC1_inputs)],
+                                                 'f_analysis': [SymLink(FTT_INPUT_BASE_DIR), SymLink(XGC1_inputs)]},
                                # rc_dependency={'f_analysis':'simulation',}, # Specify dependencies between workflow components
                                run_repetitions=0,
                                # No. of times each experiment in the group must be repeated (Total no. of runs here will be 3)
