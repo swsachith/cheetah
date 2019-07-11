@@ -40,7 +40,7 @@ class GrayScott(Campaign):
 
     # Options for the underlying scheduler on the target system. Specify the project ID and job queue here.
     scheduler_options = {'theta': {'project': 'CSC249ADCD01', 'queue': 'default'},
-                         'summit': {'project': 'csc299'}}
+                         'summit': {'project': 'csc143'}}
 
     # A way to setup your environment before the experiment runs. Export environment variables such as LD_LIBRARY_PATH here.
     app_config_scripts = {'local': 'setup.sh', 'theta': 'env_setup.sh', 'summit': 'setup.sh'}

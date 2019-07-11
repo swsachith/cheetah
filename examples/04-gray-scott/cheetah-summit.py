@@ -105,14 +105,14 @@ class GrayScott(Campaign):
     sweep2 = p.Sweep (parameters = sweep2_parameters, node_layout = {'summit': shared_node_layout})
 
     # Create a SweepGroup and add the above Sweeps. Set batch job properties such as the no. of nodes, 
-    sweepGroup1 = p.SweepGroup ("sg-1", # A unique name for the SweepGroup
+    sweepGroup1 = p.SweepGroup ("gs-summit-exp1", # A unique name for the SweepGroup
                                 walltime=3600,  # Total runtime for the SweepGroup
                                 per_run_timeout=300,    # Timeout for each experiment                                
                                 parameter_groups=[sweep2],   # Sweeps to include in this group
                                 launch_mode='default',  # Launch mode: default, or MPMD if supported
                                 nodes=1,  # No. of nodes for the batch job.
                                 # rc_dependency={'pdf_calc':'simulation',}, # Specify dependencies between workflow components
-                                run_repetitions=1,  # No. of times each experiment in the group must be repeated (Total no. of runs here will be 3)
+                                run_repetitions=0,  # No. of times each experiment in the group must be repeated (Total no. of runs here will be 3)
                                 )
     
     # Activate the SweepGroup
