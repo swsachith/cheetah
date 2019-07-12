@@ -114,7 +114,6 @@ class GrayScott(Campaign):
 
     sweep2 = p.Sweep(parameters=sweep2_parameters, node_layout={'summit': shared_node_layout})
 
-    @staticmethod
     def get_absolute_paths(file_location):
         files = []
         for file in os.listdir(file_location):
@@ -132,8 +131,8 @@ class GrayScott(Campaign):
                                nodes=8,  # No. of nodes for the batch job.
                                component_subdirs=True,
                                # <-- codes have their own separate workspace in the experiment directory
-                               component_inputs={'simulation': get_absolute_paths(XGC_INPUT_BASE_DIR).append(SymLink(XGC1_inputs)),
-                                                 'f_analysis': get_absolute_paths(FTT_INPUT_BASE_DIR).append(SymLink(XGC1_inputs))},
+                               component_inputs={'simulation': get_absolute_paths(XGC_INPUT_BASE_DIR) + [SymLink(XGC1_inputs)],
+                                                 'f_analysis': get_absolute_paths(FTT_INPUT_BASE_DIR) + [SymLink(XGC1_inputs)]},
                                # rc_dependency={'f_analysis':'simulation',}, # Specify dependencies between workflow components
                                run_repetitions=0,
                                # No. of times each experiment in the group must be repeated (Total no. of runs here will be 3)
