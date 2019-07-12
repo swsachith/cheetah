@@ -4,15 +4,15 @@ from codar.savanna.machines import SummitNode
 from codar.cheetah.parameters import SymLink
 import copy
 from math import floor
-
+import os
 
 class GrayScott(Campaign):
     # A name for the campaign
     name = "XGC1-f_analysis"
 
     # Input base directory
-    XGC_INPUT_BASE_DIR = "/gpfs/alpine/scratch/swithana/csc143/xgc-f/exp-xgc-ftt-demo/xgc_work_cheetah/*"
-    FTT_INPUT_BASE_DIR = "/gpfs/alpine/scratch/swithana/csc143/xgc-f/exp-xgc-ftt-demo/ftt_work_cheetah/*"
+    XGC_INPUT_BASE_DIR = "/gpfs/alpine/scratch/swithana/csc143/xgc-f/exp-xgc-ftt-demo/xgc_work_cheetah/"
+    FTT_INPUT_BASE_DIR = "/gpfs/alpine/scratch/swithana/csc143/xgc-f/exp-xgc-ftt-demo/ftt_work_cheetah/"
     XGC1_inputs = "/gpfs/alpine/scratch/swithana/csc143/xgc-f/exp-xgc-ftt-demo/setup2/XGC-1_inputs"
 
     # Define your workflow. Setup the applications that form the workflow.
@@ -114,7 +114,16 @@ class GrayScott(Campaign):
 
     sweep2 = p.Sweep(parameters=sweep2_parameters, node_layout={'summit': shared_node_layout})
 
-    # Create a SweepGroup and add the above Sweeps. Set batch job properties such as the no. of nodes, 
+    @staticmethod
+    def get_absolute_paths(file_location):
+        files = []
+        for file in os.listdir(file_location):
+            path = os.path.join(file_location, file)
+            if os.path.isfile(path):
+                files.append(path)
+        return files
+
+    # Create a SweepGroup and add the above Sweeps. Set batch job properties such as the no. of nodes,
     sweepGroup1 = p.SweepGroup("summit-xgc-f1-1",  # A unique name for the SweepGroup
                                walltime=60,  # Total runtime for the SweepGroup
                                per_run_timeout=60,  # Timeout for each experiment
@@ -123,8 +132,8 @@ class GrayScott(Campaign):
                                nodes=8,  # No. of nodes for the batch job.
                                component_subdirs=True,
                                # <-- codes have their own separate workspace in the experiment directory
-                               component_inputs={'simulation': [SymLink(XGC_INPUT_BASE_DIR), SymLink(XGC1_inputs)],
-                                                 'f_analysis': [SymLink(FTT_INPUT_BASE_DIR), SymLink(XGC1_inputs)]},
+                               component_inputs={'simulation': get_absolute_paths(XGC_INPUT_BASE_DIR).append(SymLink(XGC1_inputs)),
+                                                 'f_analysis': get_absolute_paths(FTT_INPUT_BASE_DIR).append(SymLink(XGC1_inputs))},
                                # rc_dependency={'f_analysis':'simulation',}, # Specify dependencies between workflow components
                                run_repetitions=0,
                                # No. of times each experiment in the group must be repeated (Total no. of runs here will be 3)
@@ -132,3 +141,4 @@ class GrayScott(Campaign):
 
     # Activate the SweepGroup
     sweeps = [sweepGroup1]
+
