@@ -116,8 +116,8 @@ class GrayScott(Campaign):
                                component_subdirs=True,
                                # <-- codes have their own separate workspace in the experiment directory
                                component_inputs={
-                                   'xgc1': [XGC_INPUT_BASE_DIR + '/adios_in', XGC_INPUT_BASE_DIR + '/mon_in', XGC_INPUT_BASE_DIR + '/petsc.rc', SymLink(BUILD_DIR + '/xgc-es'), SymLink(XGC1_inputs)],
-                                   'f_analysis': [FTT_INPUT_BASE_DIR + '/adios_in', FTT_INPUT_BASE_DIR + '/mon_in', FTT_INPUT_BASE_DIR + '/petsc.rc', SymLink(BUILD_DIR + '/xgc-f0'), SymLink(XGC1_inputs)]},  # inputs required by codes
+                                   'xgc1': [XGC_INPUT_BASE_DIR + '/adios_in' ,XGC_INPUT_BASE_DIR + '/input', XGC_INPUT_BASE_DIR + '/mon_in', XGC_INPUT_BASE_DIR + '/petsc.rc', SymLink(BUILD_DIR + '/xgc-es'), SymLink(XGC1_inputs)],
+                                   'f_analysis': [FTT_INPUT_BASE_DIR + '/adios_in', XGC_INPUT_BASE_DIR + '/input', FTT_INPUT_BASE_DIR + '/mon_in', FTT_INPUT_BASE_DIR + '/petsc.rc', SymLink(BUILD_DIR + '/xgc-f0'), SymLink(XGC1_inputs)]},  # inputs required by codes
                                )
 
     # Activate the SweepGroup
