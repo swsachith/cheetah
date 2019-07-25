@@ -22,8 +22,8 @@ class GrayScott(Campaign):
     # The adios xml file is automatically copied to the campaign directory.
     # 'runner_override' may be used to launch the code on a login/service node as a serial code
     #   without a runner such as aprun/srun/jsrun etc.
-    codes = [("xgc1", dict(exe="xgc-es", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)),
-             ("f_analysis", dict(exe="xgc-f0", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)), ]
+    codes = [("xgc1", dict(exe="run-xgc.sh", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)),
+             ("f_analysis", dict(exe="run-ftt.sh", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)), ]
 
     # List of machines on which this code can be run
     supported_machines = ['local', 'titan', 'theta', 'summit']
