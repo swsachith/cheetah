@@ -32,7 +32,7 @@ class GrayScott(Campaign):
     kill_on_partial_failure = True
 
     # Any setup that you may need to do in an exper
-    run_dir_setup_script = None
+    run_dir_setup_script = 'setup.sh'
 
     # A post-process script that is run for every experiment after the experiment completes
     run_post_process_script = None
