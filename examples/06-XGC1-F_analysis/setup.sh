@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 module use -a /gpfs/alpine/proj-shared/csc143/jyc/summit/sw/modulefiles
 module unload /gpfs/alpine/csc143/world-shared/jyc/summit/sw/spack/share/spack/modules/linux-rhel7-ppc64le
 
