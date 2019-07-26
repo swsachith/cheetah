@@ -22,8 +22,8 @@ class GrayScott(Campaign):
     # The adios xml file is automatically copied to the campaign directory.
     # 'runner_override' may be used to launch the code on a login/service node as a serial code
     #   without a runner such as aprun/srun/jsrun etc.
-    codes = [("xgc1", dict(exe="run-xgc.sh", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)),
-             ("f_analysis", dict(exe="run-ftt.sh", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)), ]
+    codes = [("xgc1", dict(exe="xgc-es", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)),
+             ("f_analysis", dict(exe="xgc-f0", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)), ]
 
     # List of machines on which this code can be run
     supported_machines = ['local', 'titan', 'theta', 'summit']
@@ -107,8 +107,8 @@ class GrayScott(Campaign):
     sweep2 = p.Sweep(parameters=sweep2_parameters, node_layout={'summit': shared_node_layout}, rc_dependency={'f_analysis':'xgc1'})
 
     # Create a SweepGroup and add the above Sweeps. Set batch job properties such as the no. of nodes,
-    sweepGroup1 = p.SweepGroup("summit-xgc-f1-1",  # A unique name for the SweepGroup
-                               walltime=60,  # Total runtime for the SweepGroup
+    sweepGroup1 = p.SweepGroup("summit-xgc-f1-3",  # A unique name for the SweepGroup
+                               walltime=120,  # Total runtime for the SweepGroup
                                per_run_timeout=60,  # Timeout for each experiment
                                parameter_groups=[sweep2],  # Sweeps to include in this group
                                launch_mode='default',  # Launch mode: default, or MPMD if supported
@@ -116,8 +116,8 @@ class GrayScott(Campaign):
                                component_subdirs=True,
                                # <-- codes have their own separate workspace in the experiment directory
                                component_inputs={
-                                   'xgc1': [XGC_INPUT_BASE_DIR + '/adios_in' ,XGC_INPUT_BASE_DIR + '/input', XGC_INPUT_BASE_DIR + '/mon_in', XGC_INPUT_BASE_DIR + '/petsc.rc', SymLink(BUILD_DIR + '/xgc-es'), SymLink(XGC1_inputs)],
-                                   'f_analysis': [FTT_INPUT_BASE_DIR + '/adios_in', XGC_INPUT_BASE_DIR + '/input', FTT_INPUT_BASE_DIR + '/mon_in', FTT_INPUT_BASE_DIR + '/petsc.rc', SymLink(BUILD_DIR + '/xgc-f0'), SymLink(XGC1_inputs)]},  # inputs required by codes
+                                   'xgc1': [XGC_INPUT_BASE_DIR + '/adios_in' ,XGC_INPUT_BASE_DIR + '/input', XGC_INPUT_BASE_DIR + '/mon_in', XGC_INPUT_BASE_DIR + '/petsc.rc', XGC_INPUT_BASE_DIR + '/adioscfg.xml', SymLink(BUILD_DIR + '/xgc-es'), SymLink(XGC1_inputs)],
+                                   'f_analysis': [ FTT_INPUT_BASE_DIR + '/adioscfg.xml', FTT_INPUT_BASE_DIR + '/adios_in', XGC_INPUT_BASE_DIR + '/input', FTT_INPUT_BASE_DIR + '/mon_in', FTT_INPUT_BASE_DIR + '/petsc.rc', SymLink(BUILD_DIR + '/xgc-f0'), SymLink(XGC1_inputs)]},  # inputs required by codes
                                )
 
     # Activate the SweepGroup
