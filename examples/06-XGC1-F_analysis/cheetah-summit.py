@@ -6,6 +6,7 @@ import copy
 from math import floor
 import os
 
+
 class GrayScott(Campaign):
     # A name for the campaign
     name = "XGC1-f_analysis"
@@ -23,7 +24,8 @@ class GrayScott(Campaign):
     # 'runner_override' may be used to launch the code on a login/service node as a serial code
     #   without a runner such as aprun/srun/jsrun etc.
     codes = [("xgc1", dict(exe="xgc-es", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)),
-             ("f_analysis", dict(exe="xgc-f0", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)), ]
+             ("f_analysis",
+              dict(exe="xgc-f0", adios_xml_file=XGC_INPUT_BASE_DIR + '/adios2cfg.xml', runner_override=False)), ]
 
     # List of machines on which this code can be run
     supported_machines = ['local', 'titan', 'theta', 'summit']
@@ -45,7 +47,7 @@ class GrayScott(Campaign):
                          'summit': {'project': 'csc143'}}
 
     # A way to setup your environment before the experiment runs. Export environment variables such as LD_LIBRARY_PATH here.
-    #app_config_scripts = {'local': 'setup.sh', 'theta': 'env_setup.sh', 'summit': 'setup.sh'}
+    # app_config_scripts = {'local': 'setup.sh', 'theta': 'env_setup.sh', 'summit': 'setup.sh'}
     app_config_scripts = {'local': 'setup.sh', 'theta': 'env_setup.sh', 'summit': 'setup_gcc.sh'}
 
     # Setup the sweep parameters for a Sweep
@@ -117,10 +119,17 @@ class GrayScott(Campaign):
                                component_subdirs=True,
                                # <-- codes have their own separate workspace in the experiment directory
                                component_inputs={
-                                   'xgc1': [XGC_INPUT_BASE_DIR + '/adios_in' ,XGC_INPUT_BASE_DIR + '/input', XGC_INPUT_BASE_DIR + '/mon_in', XGC_INPUT_BASE_DIR + '/petsc.rc', XGC_INPUT_BASE_DIR + '/adioscfg.xml', SymLink(BUILD_DIR + '/xgc-es'), SymLink(XGC1_inputs)],
-                                   'f_analysis': [ FTT_INPUT_BASE_DIR + '/adioscfg.xml', FTT_INPUT_BASE_DIR + '/adios_in', XGC_INPUT_BASE_DIR + '/input', FTT_INPUT_BASE_DIR + '/mon_in', FTT_INPUT_BASE_DIR + '/petsc.rc', SymLink(BUILD_DIR + '/xgc-f0'), SymLink(XGC1_inputs)]},  # inputs required by codes
+                                   'xgc1': [XGC_INPUT_BASE_DIR + '/adios_in', XGC_INPUT_BASE_DIR + '/input',
+                                            XGC_INPUT_BASE_DIR + '/mon_in', XGC_INPUT_BASE_DIR + '/input.gpu',
+                                            XGC_INPUT_BASE_DIR + '/coupling.in', XGC_INPUT_BASE_DIR + '/petsc.rc',
+                                            XGC_INPUT_BASE_DIR + '/adioscfg.xml', SymLink(BUILD_DIR + '/xgc-es'),
+                                            SymLink(XGC1_inputs)],
+                                   'f_analysis': [FTT_INPUT_BASE_DIR + '/adioscfg.xml',
+                                                  FTT_INPUT_BASE_DIR + '/adios_in', XGC_INPUT_BASE_DIR + '/input',
+                                                  FTT_INPUT_BASE_DIR + '/mon_in', FTT_INPUT_BASE_DIR + '/petsc.rc',
+                                                  SymLink(BUILD_DIR + '/xgc-f0'), SymLink(XGC1_inputs)]},
+                               # inputs required by codes
                                )
 
     # Activate the SweepGroup
     sweeps = [sweepGroup1]
-
