@@ -45,7 +45,8 @@ class GrayScott(Campaign):
                          'summit': {'project': 'csc143'}}
 
     # A way to setup your environment before the experiment runs. Export environment variables such as LD_LIBRARY_PATH here.
-    app_config_scripts = {'local': 'setup.sh', 'theta': 'env_setup.sh', 'summit': 'setup.sh'}
+    #app_config_scripts = {'local': 'setup.sh', 'theta': 'env_setup.sh', 'summit': 'setup.sh'}
+    app_config_scripts = {'local': 'setup.sh', 'theta': 'env_setup.sh', 'summit': 'setup_gcc.sh'}
 
     # Setup the sweep parameters for a Sweep
     sweep1_parameters = [
@@ -104,12 +105,12 @@ class GrayScott(Campaign):
         shared_node.gpu[i] = ["xgc1:{}".format(i)]
     shared_node_layout = [shared_node]
 
-    sweep2 = p.Sweep(parameters=sweep2_parameters, node_layout={'summit': shared_node_layout}, rc_dependency={'f_analysis':'xgc1'})
+    sweep2 = p.Sweep(parameters=sweep2_parameters, node_layout={'summit': shared_node_layout})
 
     # Create a SweepGroup and add the above Sweeps. Set batch job properties such as the no. of nodes,
-    sweepGroup1 = p.SweepGroup("summit-xgc-f1-3",  # A unique name for the SweepGroup
+    sweepGroup1 = p.SweepGroup("summit-xgc-f1-4",  # A unique name for the SweepGroup
                                walltime=120,  # Total runtime for the SweepGroup
-                               per_run_timeout=60,  # Timeout for each experiment
+                               per_run_timeout=160,  # Timeout for each experiment
                                parameter_groups=[sweep2],  # Sweeps to include in this group
                                launch_mode='default',  # Launch mode: default, or MPMD if supported
                                nodes=8,  # No. of nodes for the batch job.
