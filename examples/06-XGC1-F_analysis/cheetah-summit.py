@@ -54,13 +54,13 @@ class GrayScott(Campaign):
     sweep1_parameters = [
         # ParamRunner 'nprocs' specifies the no. of ranks to be spawned
         p.ParamRunner('xgc1', 'nprocs', [8 * 6]),
-        p.ParamEnvVar('xgc1', 'openmp', 'OMP_NUM_THREADS', [4]),
+        p.ParamEnvVar('xgc1', 'openmp', 'OMP_NUM_THREADS', [6]),
         p.ParamEnvVar('xgc1', 'cpumask', 'MPICH_CPUMASK_DISPLAY', [1]),
         p.ParamEnvVar('xgc1', 'rankreorder', 'MPICH_RANK_REORDER_DISPLAY', [1]),
         p.ParamEnvVar('xgc1', 'gnilmt', 'MPICH_GNI_LMT_GET_PATH', ["disabled"]),
         p.ParamKeyValue('xgc1', 'nphi', 'input', 'sml_nphi_total', ["2"]),  # 2 or nprocs/192
         p.ParamKeyValue('xgc1', 'grid', 'input', 'sml_grid_nrho', ["2"]),  # 2 or 6
-        p.ParamKeyValue('xgc1', 'inputdir', 'input', 'sml_input_file_dir', ["./XGC-1_inputs"]),
+        p.ParamKeyValue('xgc1', 'inputdir', 'input', 'sml_input_file_dir', ["'./XGC-1_inputs'"]),
         p.ParamKeyValue('xgc1', 'total_steps', 'input', 'sml_mstep', ["1000"]),
 
         # Now setup options for the f_analysis application.
