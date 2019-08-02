@@ -1,3 +1,4 @@
+#!/bin/bash
 module use -a /gpfs/alpine/proj-shared/csc143/jyc/summit/sw/modulefiles
 module unload /gpfs/alpine/csc143/world-shared/jyc/summit/sw/spack/share/spack/modules/linux-rhel7-ppc64le
 
@@ -24,3 +25,9 @@ module load hdf5/1.10.3
 module load petsc/3.7.2-py2
 
 export XGC_PLATFORM=summit.gcc.jyc
+
+ln -s xgc1 coupling
+mkdir -p xgc1/timing
+mkdir -p f_analysis/timing
+mkdir -p xgc1/restart_dir
+mkdir -p f_analysis/restart_dir
