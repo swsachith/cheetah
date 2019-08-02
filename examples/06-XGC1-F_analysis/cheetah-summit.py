@@ -48,7 +48,8 @@ class GrayScott(Campaign):
 
     # A way to setup your environment before the experiment runs. Export environment variables such as LD_LIBRARY_PATH here.
     # app_config_scripts = {'local': 'setup.sh', 'theta': 'env_setup.sh', 'summit': 'setup.sh'}
-    app_config_scripts = {'local': 'setup.sh', 'theta': 'env_setup.sh', 'summit': 'setup.sh'}
+    app_config_scripts = {'local': 'setup.sh', 'theta': 'env_setup.sh', 'summit': 'summit_env.sh'}
+
 
     # Setup the sweep parameters for a Sweep
     sweep1_parameters = [
