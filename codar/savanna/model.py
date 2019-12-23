@@ -21,10 +21,9 @@ import signal
 import logging
 from queue import Queue
 import copy
-import json
 import pdb
 
-from codar.savanna import status, machines, summit_helper
+from codar.savanna import status, machines, summit_helper, deepthought2_helper
 from codar.savanna.exc import SavannaException
 from codar.savanna.node_layout import NodeLayout
 
@@ -127,9 +126,9 @@ class Run(threading.Thread):
         # mpi hostfile option
         self.hostfile = hostfile
 
-        # Machine and nodes assigned are set by pipeline just before run is
-        # started
         self.machine = None
+
+        # nodes assigned needed for Summit
         self.nodes_assigned = None
 
         # node_config for node-sharing on summit
@@ -138,9 +137,16 @@ class Run(threading.Thread):
         # erf_file needed for summit
         self.erf_file = None
 
+        # rankfile for the DeepThought2 machine. Don't know where else to
+        # put this option right now.
+        self.dth_rankfile = None
+
         # An override option to launch the code without the machine runner (
         # aprun/jsrun/srun etc.
         self.runner_override = runner_override
+
+        # For mpmd mode on machines such as Summit, keep a list of child runs
+        self.child_runs = None
 
     @classmethod
     def from_data(cls, data):
@@ -169,17 +175,41 @@ class Run(threading.Thread):
 
     @classmethod
     def mpmd_run(cls, runs):
+        """
+        Returns a new Run object
+        """
+
+        # For Summit, just return runs. The ERF helper will handle it. For
+        # other machines, return a single aggregated Run object
+
+        if runs[0].machine.name.lower() == 'summit':
+            # create a run object, name it 'mpmd', and add runs as child runs
+            r = Run(name='mpmd', exe=None, args=None, sched_args=None,
+                    env=runs[0].env, working_dir=runs[0].working_dir,
+                    timeout=runs[0].timeout, nprocs=None, res_set=None,
+                    stdout_path=None, stderr_path=None, return_path=None,
+                    walltime_path=None, sleep_after=None,
+                    depends_on_runs=None, hostfile=None, runner_override=None)
+
+            # Pipeline sets the machine for its runs, so you have to
+            # explicitly do it here as well.
+            r.machine = runs[0].machine
+
+            r.child_runs = runs
+            return r
+
         if len(runs) == 1:
             return runs
 
-        name = '-'.join(run.name for run in runs)
+        # this is for regular mpmd launches that where the launch command is
+        # a ':' separated list of individual app launches
         mpmd_args = runs[0].args
-
         for run in runs[1:]:
             run_args = run.runner.wrap(run)
             del run_args[0]
             mpmd_args.extend(":")
             mpmd_args.extend(run_args)
+            # no need to set run.nodes = sum(child run.nodes)
 
         r = runs[0]
         r.args = mpmd_args
@@ -244,7 +274,7 @@ class Run(threading.Thread):
             # We could force a workflow kill in this case, but this less
             # drastic approach may provide extra information and won't
             # take much longer.
-            self._exception = True # Note: state lock not required
+            self._exception = True  # Note: state lock not required
             _log.exception('exception in Run thread')
             # attempt to execute callbacks, so more threads could be run
             try:
@@ -260,7 +290,18 @@ class Run(threading.Thread):
 
         if self.machine.name.lower() == 'summit':
             self.erf_file = self.working_dir + "/" + self.name + ".erf_input"
-            summit_helper.create_erf_file(self)
+
+            # for mpmd runs
+            if self.child_runs is not None:
+                summit_helper.create_erf_file_mpmd(self)
+            else:
+                summit_helper.create_erf_file(self)
+
+        if 'deepthought2' in self.machine.name.lower():
+            if self.node_config is not None:
+                self.dth_rankfile = self.working_dir + '/' + self.name + \
+                                    ".rankfile"
+                deepthought2_helper.create_rankfile(self)
 
         # if self.machine.name.lower() == 'summit':
         #     # are we releasing when the run finishes, or when the pipeline
@@ -288,7 +329,8 @@ class Run(threading.Thread):
         try:
             self._p.wait(self.timeout)
         except subprocess.TimeoutExpired:
-            _log.warn('%s killing (timeout %d)', self.log_prefix, self.timeout)
+            _log.warning('%s killing (timeout %d)', self.log_prefix,
+                         self.timeout)
             with self._state_lock:
                 self._timeout_pending = True
             if not self._killed:
@@ -306,7 +348,7 @@ class Run(threading.Thread):
         with self._state_lock:
             self._end_time = time.time()
         _log.info('%s done %d %d', self.log_prefix, self._p.pid,
-                         self._p.returncode)
+                  self._p.returncode)
         self._save_walltime(self._end_time - self._start_time)
         self._save_returncode(self._p.returncode)
         self._run_callbacks()
@@ -335,7 +377,7 @@ class Run(threading.Thread):
             self._killed = True
 
         if self._p is not None:
-            _log.warn('%s kill requested', self.log_prefix)
+            _log.warning('%s kill requested', self.log_prefix)
             self._kill_thread = threading.Thread(target=self._term_kill)
             self._kill_thread.start()
 
@@ -365,7 +407,7 @@ class Run(threading.Thread):
         _log.debug('%s _pgroup_wait max delay %d'
                    % (self.log_prefix, WAIT_DELAY_GIVE_UP))
         delay = 1
-        signum = 0 # 0 is the null signal, does error checking only
+        signum = 0  # 0 is the null signal, does error checking only
         while True:
             try:
                 os.killpg(self._pgid, signum)
@@ -377,9 +419,8 @@ class Run(threading.Thread):
             delay *= 2
             if delay > WAIT_DELAY_KILL:
                 signum = signal.SIGKILL
-                _log.warn(
-                        '%s pgroup still exists, sending KILL, next delay=%d',
-                        self.log_prefix, delay)
+                _log.warning('%s pgroup still exists, sending KILL, '
+                             'next delay=%d', self.log_prefix, delay)
             if delay > WAIT_DELAY_GIVE_UP:
                 _log.error('%s pgroup did not exit', self.log_prefix)
                 break
@@ -493,6 +534,14 @@ class Pipeline(object):
         # have all Runs in a shared node release nodes just once.
         self._nodes_assigned = Queue()
 
+        # Reorder the runs list so that runs are listed according to their
+        # dependencies
+        self.reorder_runs_by_dependencies()
+
+        # TODO: ensure that all the node layouts contain either a virtual
+        #  node object or a regular codename:ppn mapping
+        # self._validate_node_layout()
+
     @classmethod
     def from_data(cls, data):
         """Create Pipeline instance from dictionary data structure, containing
@@ -547,13 +596,51 @@ class Pipeline(object):
                         total_nodes=total_nodes,
                         machine_name=machine_name)
 
+    def reorder_runs_by_dependencies(self):
+        """
+        Reorder the runs list so that runs appear in the order in which they
+        must be launched.
+        This requires parsing their dependencies information.
+
+        Keep iterating through the runs list, finding the root-level run at
+        every iteration (one with no dependencies) until all runs are examined.
+        Watch out for cyclic dependencies.
+
+        This algorithm will work as far as there is only one code on which a
+        code can depend on.
+        """
+        ordered_runs = []
+        while len(ordered_runs) < len(self.runs):
+            cyclic_dep = True
+
+            # first retrieve all runs with no dependencies
+            for run in self.runs:
+                if run in ordered_runs:
+                    continue
+                if run.depends_on_runs is None:
+                    cyclic_dep = False
+                    ordered_runs.append(run)
+
+            # now get all runs whose depends_on are in ordered_runs
+            # this order of processing is important
+            for run in self.runs:
+                if run in ordered_runs:
+                    continue
+                if run.depends_on_runs in ordered_runs:
+                    cyclic_dep = False
+                    ordered_runs.append(run)
+
+            assert not cyclic_dep, "Cyclic dependency found amongst " \
+                                   "applications"
+
+        self.runs = ordered_runs
+
     def start(self, consumer, nodes_assigned, runner=None):
         # Mark all runs as active before they are actually started
         # in a separate thread, so other methods know the state.
 
         for node_name in nodes_assigned:
             self.nodes_assigned.put(node_name)
-            machine = machines.get_by_name(self.machine_name)
             # self.nodes_assigned.put(machine.node_class(node_name))
 
         # Make a copy of the nodes_assigned. copy.deepcopy does not work
@@ -567,11 +654,23 @@ class Pipeline(object):
         with self._state_lock:
             for run in self.runs:
                 run.set_runner(runner)
-            if self.launch_mode:
-                if self.launch_mode.lower() == 'mpmd':
-                    mpmd_run = Run.mpmd_run(self.runs)
-                    mpmd_run.nodes = self.total_nodes
-                    self.runs = [mpmd_run]
+
+            # Parse the node layout and set the run information.
+            # This requires self.nodes_assigned.
+            # Summit and DeepThought2 support VirtualNode interfaces
+            # Note that the NodeConfig/VirtualNode objects have not been
+            # created at this point, so use the following to check the node
+            # layout type. This must be done before an mpmd run obj is created.
+            layout_type = self.node_layout[0].get('__info_type__') or None
+            if layout_type == 'NodeConfig':
+                self._parse_node_layouts()
+
+            launch_mode = self.launch_mode or 'None'
+            if launch_mode.lower() == 'mpmd':
+                mpmd_run = Run.mpmd_run(self.runs)
+                mpmd_run.nodes = self.total_nodes
+                self.runs = [mpmd_run]
+
             for run in self.runs:
                 run.set_runner(runner)
 
@@ -584,11 +683,6 @@ class Pipeline(object):
                 run.add_callback(self.run_finished)
                 self._active_runs.add(run)
             self._running = True
-
-            # Parse the node layout and set the run information.
-            # This requires self.nodes_assigned .
-            # Only for Summit right now.
-            self._parse_node_layouts()
 
             # Next start pipeline runs in separate thread and return
             # immediately, so we can inject a wait time between starting runs.
@@ -609,10 +703,6 @@ class Pipeline(object):
     def _parse_node_layouts(self):
         """Only for Summit right now."""
 
-        # Return if not on Summit
-        if self.machine_name.lower() not in 'summit':
-            return
-
         # for layout in self.node_layout:
         #     self._parse_node_layout(layout)
 
@@ -622,15 +712,7 @@ class Pipeline(object):
             codes_on_node.append(list(self._extract_codes_on_node(layout)))
 
         # check for dependencies and re-arrange codes in this list
-        for l in codes_on_node:
-            for code in l:
-                if code.depends_on_runs:
-                    t = code.depends_on_runs
-                    if t not in l:
-                        for ol in codes_on_node:
-                            if t in ol:
-                                ol.append(code)
-                                l.remove(code)
+        self._rearrange_codes_by_dependencies(codes_on_node)
 
         # Get num nodes required to run this layout
         for l in codes_on_node:
@@ -657,28 +739,11 @@ class Pipeline(object):
 
     def _extract_codes_on_node(self, layout_info):
         """
-
+        Gets the unique codes on the node.
+        Also sets the no. of nodes required by each code.
         """
 
         codes_on_node = set()
-
-        # # If no node-sharing
-        # # if layout_info['__info_type__'] == 'resource_set':
-        # if layout_info.get('__info_type__', None) is None:
-        #     # Get the run handle
-        #     run_name = None
-        #     for k in layout_info.keys():
-        #         if '__info_type__' not in k:
-        #             run_name = k
-        #             break
-        #     assert run_name is not None, "Could not get run in node_layout"
-        #
-        #     run = self._get_run_by_name(run_name)
-        #     run.nodes = math.ceil(run.nprocs / int(layout_info[run_name]))
-        #     codes_on_node.add(run)
-
-        # if this is a NodeConfig object
-        # elif layout_info['__info_type__'] == 'NodeConfig':
 
         # 1. Set the no. of nodes required for this Run
         # Get the ranks per node for each run
@@ -736,6 +801,34 @@ class Pipeline(object):
 
         return list(codes_on_node)
 
+    def _rearrange_codes_by_dependencies(self, nl):
+        """
+        Input is a nested list of lists, where the inner lists represents
+        codes sharing a compute node.
+        This function rearranges those codes by dependencies so that codes
+        that are run in order are placed on the same node.
+        """
+
+        def parse_lists(_nl):
+            """
+            dont judge me
+            """
+            for l in _nl:
+                for code in l:
+                    if code.depends_on_runs:
+                        t = code.depends_on_runs
+                        if t not in l:
+                            for ol in _nl:
+                                if t in ol:
+                                    ol.append(code)
+                                    l.remove(code)
+                                    return False
+            return True
+
+        done = False
+        while not done:
+            done = parse_lists(nl)
+
     def run_finished(self, run):
         assert self._running
         run_done_callbacks = False
@@ -751,8 +844,8 @@ class Pipeline(object):
                 self.run_post_process_script()
                 run_done_callbacks = True
             elif self.kill_on_partial_failure and not run.succeeded:
-                _log.warn('%s run %s failed, killing remaining',
-                          self.log_prefix, run.name)
+                _log.warning('%s run %s failed, killing remaining',
+                             self.log_prefix, run.name)
                 # if configured, kill all runs in the pipeline if one of
                 # them has a nonzero exit code. Still allow post process to
                 # run if set.
@@ -793,8 +886,8 @@ class Pipeline(object):
             rval = subprocess.call(args, stdout=outf, stderr=errf,
                                    cwd=self.working_dir, timeout=120)
         except subprocess.SubprocessError as e:
-            _log.warn("pipe '%s' failed to run post process script: %s",
-                      self.id, str(e))
+            _log.warning("pipe '%s' failed to run post process script: %s",
+                         self.id, str(e))
             rval = None
         finally:
             end_time = time.time()
@@ -844,7 +937,8 @@ class Pipeline(object):
 
     def get_nodes_used(self):
         if self.total_nodes is None:
-            raise ValueError("set_ppn must be called before getting node usage")
+            raise ValueError("set_ppn must be called before getting "
+                             "node usage")
         return self.total_nodes
 
     def set_ppn(self, ppn):
@@ -852,6 +946,14 @@ class Pipeline(object):
         node layout or full occupancy layout with ppn. Also updates runs
         to set node and task per node counts.
         TODO: This should be set by Cheetah in fobs.json"""
+
+        # Return if you are using VirtualNode for node layout, as the
+        # parsing is done differently for VirtualNode
+        # At this point, the node layout is not an object of VirtualNode
+        layout_type = self.node_layout[0].get('__info_type__') or None
+        if layout_type == 'NodeConfig':
+            return
+
         if self.node_layout is None:
             run_names = [run.name for run in self.runs]
             node_layout = NodeLayout.default_no_share_layout(ppn, run_names)

@@ -2,7 +2,6 @@
 Configuration for machines supported by Codar.
 """
 from codar.savanna import exc
-import json
 
 
 # Note: not all schedulers support all options, the purpose of this is
@@ -24,6 +23,38 @@ class MachineNode:
 
     def to_json(self):
         raise NotImplemented
+
+
+class DTH2CPUNode(MachineNode):
+    def __init__(self):
+        MachineNode.__init__(self, 20, 0)
+
+    def validate_layout(self):
+        # TODO
+        pass
+
+    def to_json(self):
+        """
+        TODO dont know the point of doing this
+        """
+        self.__dict__['__info_type__'] = 'NodeConfig'
+        return self.__dict__
+
+
+class DTH2GPUNode(MachineNode):
+    def __init__(self):
+        MachineNode.__init__(self, 20, 2)
+
+    def validate_layout(self):
+        # TODO
+        pass
+
+    def to_json(self):
+        """
+        TODO dont know the point of doing this
+        """
+        self.__dict__['__info_type__'] = 'NodeConfig'
+        return self.__dict__
 
 
 class SummitNode(MachineNode):
@@ -85,8 +116,6 @@ class Machine(object):
         self.scheduler_name = scheduler_name
         self.runner_name = runner_name
         self.node_class = node_class
-        # TODO: should the workflow script have knowledge of different
-        # machines, or just generic options configured by Cheetah?
         self.processes_per_node = processes_per_node
         self.node_exclusive = node_exclusive
         _check_known_scheduler_options(SCHEDULER_OPTIONS, scheduler_options)
@@ -120,7 +149,8 @@ def _check_known_scheduler_options(supported_set, options):
 # container with all the machines.
 
 # NOTE: set process per node to avoid errors with sosflow calculations
-local = Machine('local', "local", "mpiexec", MachineNode, processes_per_node=1)
+local = Machine('local', "local", "mpiexec", MachineNode,
+                processes_per_node=32)
 
 titan = Machine('titan', "pbs", "aprun", MachineNode,
                 processes_per_node=16, node_exclusive=True,
@@ -149,6 +179,15 @@ theta = Machine('theta', "cobalt", "aprun", MachineNode,
 summit = Machine('summit', "ibm_lsf", "jsrun", SummitNode,
                  processes_per_node=42, node_exclusive=True,
                  scheduler_options=dict(project=""))
+
+
+deepthought2_cpu = Machine('deepthought2_cpu', "slurm", "mpirunc", DTH2CPUNode,
+                           processes_per_node=20, node_exclusive=False,
+                           scheduler_options=dict(project="", queue="default"))
+
+deepthought2_gpu = Machine('deepthought2_gpu', "slurm", "mpirung", DTH2GPUNode,
+                           processes_per_node=20, node_exclusive=False,
+                           scheduler_options=dict(project="", queue="default"))
 
 
 def get_by_name(name):

@@ -294,14 +294,6 @@ class Campaign(object):
 
                     # TODO: validate node layout against machine model
 
-                    # Summit override. Don't support MPMD yet.
-                    if self.machine.name.lower() == "summit":
-                        if group.launch_mode:
-                            if group.launch_mode.lower() == 'mpmd':
-                                print("MPMD not supported on Summit yet."
-                                      "Changing to default launch mode.")
-                                group.launch_mode = 'default'
-
                     sweep_runs = [Run(inst, self.codes, self.app_dir,
                                       os.path.join(
                                           group_output_dir,
@@ -318,6 +310,23 @@ class Campaign(object):
                                       group.component_inputs)
                                   for i, inst in enumerate(
                             sweep.get_instances())]
+
+                    # we dont support mpmd mode with dependencies
+                    try:
+                        if group.launch_mode.lower() == 'mpmd':
+                            assert sweep.rc_dependency is None, \
+                                "Dependencies in MPMD mode not supported"
+                    except AttributeError:
+                        pass
+
+                    # we dont support mpmd on deepthought2
+                    try:
+                        if self.machine.machine_name.lower() == 'deepthought2':
+                            assert group.launch_mode.lower() not in 'mpmd',\
+                                "mpmd mode not implemented for deepthought2"
+                    except AttributeError:
+                        pass
+
                     group_runs.extend(sweep_runs)
                     group_run_offset += len(sweep_runs)
             self.runs.extend(group_runs)
@@ -575,6 +584,7 @@ class Run(object):
         Group codes based upon the node layout (separate/shared nodes),
         then consider the dependency between components to calculate the
         total no. of nodes.
+        TODO This functionality exists in Savanna already.
         """
 
         # num_nodes_rc = {}
@@ -600,7 +610,8 @@ class Run(object):
                 # For summit: its something like {'xgc':{0,1,2,4,5}}, i.e.
                 #   its a dict of sets. For other machines, its a dict of
                 #   int that represents ppn.
-                if 'summit' in self.machine.name.lower():
+                if isinstance(self.node_layout.layout_list[0],
+                              machines.MachineNode):
                     num_nodes_code = math.ceil(
                         rc.nprocs/len(code_group[codename]))
                 else:
@@ -617,21 +628,29 @@ class Run(object):
         Input is a list of dictionaries where the key is the code and value
         is the no. of ranks on a node"""
 
-        # ugh
-        for d in code_groups:
-            for rc_name in list(d.keys()):
-                rc = self._get_rc_by_name(rc_name)
-                if rc.after_rc_done:
-                    m_rc = rc.after_rc_done
-                    if m_rc.name not in d.keys():
-                        t_d = None
-                        for d2 in code_groups:
-                            if m_rc.name in list(d2.keys()):
-                                t_d = d2
-                        assert t_d is not None, "Internal error in " \
-                                                "dependency management."
-                        t_d[rc_name] = d[rc_name]
-                        del d[rc_name]
+        def parse_dicts(l_d):
+            for d in l_d:
+                for rc_name in d:
+                    rc = self._get_rc_by_name(rc_name)
+                    if rc.after_rc_done:
+                        if rc.after_rc_done.name not in list(d.keys()):
+                            target_d = None
+                            for d2 in l_d:
+                                if rc.after_rc_done.name in list(d2.keys()):
+                                    target_d = d2
+                                    break
+                            assert target_d is not None, \
+                                "Internal dependency management error! " \
+                                "Could not find rc {} in codes".format(
+                                    rc.after_rc_done.name)
+                            target_d[rc_name] = d[rc_name]
+                            del d[rc_name]
+                            return False
+            return True
+
+        done = False
+        while not done:
+            done = parse_dicts(code_groups)
 
     def get_app_param_dict(self):
         """Return dictionary containing only the app parameters
